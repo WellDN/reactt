@@ -1,1 +1,5 @@
-const element = <h1>Hello, World!</h1>;
+function Hiwrld() {
+    return <h1>Hello World</h1>
+  }
+  
+  export default Hiwrld
