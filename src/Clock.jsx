@@ -1,4 +1,4 @@
-/*class Clock extends React.Component { //export default function??
+export class Clock extends React.Component { //export default function??
   render() {
     return (
       <div>
@@ -11,7 +11,7 @@
  function tick() {
   root.render(<Clock date={new Date()} />);
 }
-setInterval(tick, 1000); */
+setInterval(tick, 1000);
 
 //export default Clock
 
