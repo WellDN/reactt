@@ -1,4 +1,4 @@
-class Timer extends React.Component {
+class Counter extends React.Component {
     constructor(props) {
       super(props);
       this.state = { seconds: 0 };
@@ -28,8 +28,8 @@ class Timer extends React.Component {
   }
   
   ReactDOM.render(
-    <Timer />,
+    <Counter />,
     document.getElementById('root')
   );
 
-  export default Timer
+  //export default Counter

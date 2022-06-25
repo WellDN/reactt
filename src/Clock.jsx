@@ -1,4 +1,4 @@
-class Clock extends React.Component {
+/*class Clock extends React.Component { //export default function??
   render() {
     return (
       <div>
@@ -8,14 +8,12 @@ class Clock extends React.Component {
     );
   }
 }
-
-function tick() {
+ function tick() {
   root.render(<Clock date={new Date()} />);
 }
+setInterval(tick, 1000); */
 
-setInterval(tick, 1000);
-
-export default Clock
+//export default Clock
 
   //componente clock está sendo reutilizado e encapsulado. ele irá configurar seu próprio temporazidor e se
   //atualizar a cada segundo.

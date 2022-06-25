@@ -41,4 +41,4 @@ class MarkdownEditor extends React.Component {
     document.getElementById('root')
   );
 
-  export default MarkdownEditor
+  //export default MarkdownEditor
