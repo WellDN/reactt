@@ -1,9 +1,9 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import {Clock} from './Clock' //change
+import App from './App' //change
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <Clock /> 
+    <App /> 
   </React.StrictMode> //change the <.../>
 )
