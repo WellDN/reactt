@@ -134,32 +134,32 @@ function LoginButton(props) {
   but ill return th expression false. In the expression below, <div>0</div> ill return for
   rendering method.*/
 
-  render() {
+ // render() {
     const count = 0;
     return (
       <div>
         { count && <h1>Messages: {count}</h1>}
       </div>
     );
-  }
+ // }
 /*
 If-Else inline with Conditional Operator: Another method to render inline elements is
 use the conditional operator in JavaScript condition ? true : false. 
 
 in the example belo, ill use to render conditionally a little text block:*/
 
-render() {
-    const isLoggedIn = this.state.isLoggedIn;
+//render() {
+ //   const isLoggedIn = this.state.isLoggedIn;
     return (
       <div>
         The user is <b>{isLoggedIn ? 'currently' : 'not'}</b> logged in.
       </div>
     );
-  }
+  //}
 
   /*can too be used to longer expressions, although what its happening be less obvious:*/
 
-  render() {
+  //render() {
     const isLoggedIn = this.state.isLoggedIn;
     return (
       <div>
@@ -169,7 +169,7 @@ render() {
         }
       </div>
     );
-  }
+  //}
   
   /*Just like JavaScript, you can decide the apropriated styled as base in whatever your team
   consider more readable.
