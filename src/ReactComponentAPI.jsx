@@ -540,4 +540,183 @@ UNSAFE_componentWillUpdate() */
 
 UNSAFE_componentWillUpdate(nextProps, nextState)
 
-/* */
+/*Nota
+
+Este lifecycle era nomeado componentWillUpdate. Este nome continuará a funcionar até
+ a versão 17. Utilize o codemod rename-unsafe-lifecycles para atualizar automaticamente
+  seus componentes.
+
+UNSAFE_componentWillUpdate() é invocado antes da renderização quando novas props ou
+ state estão sendo recebidos. Utilize este método como uma oportunidade para realizar
+  preparações antes que uma atualização ocorra. Este método não é chamado para a
+   renderização inicial.
+
+Note que você não pode chamar this.setState() aqui; e nem deveria fazer nada além
+ (por exemplo, realizar o dispatch de uma action do Redux) que desencadearia uma
+  atualização em um componente React antes que UNSAFE_componentWillUpdate() retorne.
+
+Tipicamente, este método pode ser substituído por componentDidUpdate(). Se você
+ estiver lendo do DOM neste método (por exemplo, para salvar a posição de rolagem),
+  você pode mover esta lógica para getSnapshotBeforeUpdate().
+
+Nota
+
+UNSAFE_componentWillUpdate() não será invocado se shouldComponentUpdate() retornar
+ false.
+
+Outras APIs
+Diferentemente dos métodos do lifecycle acima (que o React chama por você), os 
+métodos abaixo são métodos que você pode chamar a partir de seus componentes.
+
+Existem apenas dois deles: setState() e forceUpdate().
+
+setState() */
+
+setState(updater, [callback])
+
+/*setState() enfileira mudanças ao state do componente e diz ao React que este
+ componente e seus componentes filho precisam ser re-renderizados com a atualização do
+  state. Este é o principal método que você utiliza para atualizar a UI em resposta a
+   event handlers e à resposta de servidores.
+
+Pense em setState() como uma requisição ao invés de um comando imediato para atualizar
+ o componente. Para uma melhoria na performance, o React pode atrasar a atualização, e
+  então atualizar diversos componentes numa só leva. O React não garante que as
+   mudanças no state são aplicadas imediatamente.
+
+setState() nem sempre atualiza o componente imediatamente. Ele pode adiar a atualização
+ para mais tarde. Isto torna a leitura de this.state logo após chamar setState()
+  uma potencial cilada. Como alternativa, utilize componentDidUpdate ou o callback de
+   setState (setState(updater, callback)), ambos possuem a garantia de dispararem após
+    a aplicação da atualização. Se você precisa definir o state baseado no state
+     anterior, leia sobre o argumento updater abaixo.
+
+setState() vai sempre conduzir a uma re-renderização a menos que
+ shouldComponentUpdate() retorne false. Se objetos mutáveis estão sendo utilizados e
+  lógica de renderização condicional não puder ser implementada em
+   shouldComponentUpdate(), chamar setState() somente quando o novo state diferir do
+    state anterior irá evitar re-renderizações desnecessárias.
+
+O primeiro argumento é uma função updater com a assinatura: */
+
+//(state, props) => stateChange
+
+/*state é a referência ao state do componente no momento que a mudança está sendo
+ aplicada. Ele não deve ser mutado diretamente. As mudanças devem ser representadas
+  construindo um novo objeto baseado no input de state e props. Por exemplo,
+   suponha que queiramos incrementar um valor no state em props.step: */
+
+   this.setState((state, props) => {
+    return {counter: state.counter + props.step};
+   })
+
+   /*Tanto state quanto props que foram recebidas pela função updater tem a garantia de
+    estarem atualizados. A saída do updater é superficialmente mesclada com o state.
+
+O segundo parâmetro de setState() é uma função de callback opcional que será executada
+ assim que setState for completada e o componente re-renderizado. Geralmente,
+  recomendamos utilizar componentDidUpdate() para implementar esta lógica.
+
+Você também pode passar um objeto como primeiro argumento de setState() ao invés de
+ uma função: */
+
+// setState(StateChange[, callback])
+
+/*Isto realiza uma mescla superficial de stateChange dentro no novo state. Por exemplo:
+ para ajustar a quantidade de items no carrinho de compras: */
+
+ this.setState({quantity: 2})
+
+ /*Esta forma de setState() também é assíncrona e múltiplas chamadas durante o mesmo
+  ciclo podem ser agrupadas numa só. Por exemplo, se você tentar incrementar a
+   quantidade de itens mais que uma vez no mesmo ciclo, isto resultará no
+    equivalente a: */
+
+ //   Object.assign(
+//      previousState,
+//      {quantity: state.quantity + 1},
+//      {quantity: state.quantity + 1},
+//      ...
+//    )
+
+/*Chamadas subsequentes irão sobrescrever valores de chamadas anteriores no mesmo
+ ciclo. Com isso, a quantidade será incrementada somente uma vez. Se o próximo estado
+  depende do estado atual, recomendamos utilizar a função updater como alternativa: */
+
+  this.setState((state) => {
+    return {quantity: state.quantity +1};
+  })
+
+  /*forceUpdate() */
+
+  component.forceUpdate(callback)
+
+  /*Por padrão, quando o state ou as props do seu componente são alteradas, seu
+   componente renderizará novamente. Caso seu método render() dependa de algum outro
+    dado, você pode informar ao React que o componente precisa de uma re-renderização
+     chamando forceUpdate().
+
+Chamar forceUpdate() acarretará numa chamada de render() no componente, escapando
+ shouldComponentUpdate(). Os métodos normais do lifecycle para os componentes filho
+  serão chamados, incluindo o método shouldComponentUpdate() de cada filho. O React
+   ainda irá atualizar o DOM caso realmente haja mudanças.
+
+Normalmente, você deveria tentar evitar o uso de forceUpdate() e somente ler de
+ this.props e this.state em render().
+
+Propriedades da Classe
+defaultProps
+defaultProps pode ser definido como uma propriedade do component class, para definir
+ as props padrão para a classe. Isto é aplicado a props cujo valor é undefined, mas
+  não para null. Por exemplo: */
+
+  class CustomButton extends React.Component {
+    // ...
+  }
+  
+  CustomButton.defaultProps = {
+    color: 'blue'
+  };
+
+  /*Se props.color não for informado, o seu valor será definido como 'blue': */
+
+//  render() {
+    return <CustomButton /> ; // props.color será definido como 'blue'
+//  }
+
+/*Se props.color for igual a null, continuará como null: */
+
+//render() {
+  return <CustomButton color={null} /> ; // props.color continuará null
+//}
+
+/*displayName
+A string displayName é utilizada em mensagens de depuração. Normalmente, você não
+ precisa defini-la explicitamente. Pois isto é inferido do nome da função ou classe
+  que definem o componente. Você pode querer defini-la explicitamente se quiser exibir
+   um nome diferente para propósitos de depuração ou quando você cria um higher-order
+    component. Veja Envolva o Display Name para Facilitar a Depuração para mais
+     detalhes.
+
+Propriedades da Instância
+props
+this.props contém as props que foram definidas por quem chamou este componente. Veja
+ Componentes e Props para uma introdução às props.
+
+Em particular, this.props.children é uma prop especial, normalmente definida pelas
+ tags filhas na expressão JSX, ao invés de na própria tag.
+
+state
+O state contém dados específicos a este componente que podem mudar com o tempo. O
+ state é definido pelo usuário e deve ser um objeto JavaScript.
+
+Se algum valor não for usado para renderizamento ou para controle de data flow
+ (por exemplo, um ID de timer), você não precisa colocar no state. Tais valores podem
+  ser definidos como campos na instância do componente.
+
+Veja Estado e Ciclo de Vida para mais informações sobre o state.
+
+Nunca mude this.state diretamente, pois chamar setState() após a mutação pode
+ substituir a mutação realizada. Trate this.state como se ele fosse imutável. */
+
+ 
