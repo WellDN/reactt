@@ -31,7 +31,7 @@ Frequentemente, render props e HOC renderizam somente um filho. Nós achamos que
        corresponde ao que acontece no browser, nós vamos envolver o código que
         renderiza e atualiza com ReactTestUtils.act(): */
 
-        import React, { useEffect } from 'react'; 
+        import React, { useCallback, useEffect } from 'react'; 
         import ReactDOM from 'react-dom';
         import { act } from 'react-dom/test-utils';
         import Counter from './Counter';
@@ -707,4 +707,213 @@ function Table(props) {
     // ...
 }
 
-/* */
+/*React só vai executar essa função durante a primeira renderização. Veja a API do 
+ useState.
+
+Você também pode ocasionalmente querer evitar recriar o valor inicial de useRef().
+ Por exemplo, talvez você quer garantir que algumas instâncias de classe imperativa
+  só seja criada uma vez: */
+
+  function Image(props) {
+  // IntersectionObserver é criado em todo render
+  const ref = useRef(new
+    IntersectionObserver(onIntersect));
+    //...
+  }
+
+  /*useRef não aceita uma função como useState. Ao invés disso, você pode criar sua
+  própria função que cria e define-o posteriormente: */
+
+  function Image(props) {
+    const ref = useref(null);
+    
+    //IntersectionOberserver é criado somente uma vez
+    function getOberserver() {
+        if (ref.current === null) {
+            ref.current = new
+        IntersectionObeserver(onIntersect);
+        }
+        return ref.current;
+    }
+
+    //quando voce precisar, execute getObserver()
+    //...
+  }
+
+  /*Isto evita criar um objeto custoso até que ele seja realmente necessário pela
+   primeira vez. Se você usa Flow ou TypeScript, você pode também dar getObserver()
+    um tipo não nulo por conveniência.
+
+Hooks são mais lentos por criar funções no render?
+Não. Nos browsers modernos, o desempenho bruto de closures comparados à classes não
+ difere significantemente exceto em casos extremos.
+
+Em adição, considere que o design de Hooks é mais eficiente por alguns motivos:
+
+Hooks evitam muito da sobrecarga que classes exigem, como o custo de criar instâncas
+ de classes e fazer o bind the manipuladores de eventos no constructor.
+Código idiomático usando Hooks evita aninhamento profundo de componentes que prevalece
+ nas codebases que usam HOC, render props e context. Com árvores de componentes
+  menores, React tem menos trabalho a fazer.
+Tradicionalmente, preocupações de desempenho sobre funções inline no React tem sido
+ relacionadas a como passar novas callbacks em cada renderização quebra as otimizações
+  de shouldComponentUpdate nos componentes filho. Hooks abordam esse problema de três
+   maneiras.
+
+O Hook useCallback permite que você mantenha a mesma callback entre re-renderizações
+ para que shouldComponentUpdate continue a funcionar: */
+
+ // Não vai mudar ao menos que `a` ou `b` mude
+ const memoizedCallback = useCallback (() => {
+    doSomething(a, b);
+ }, [a, b]);
+
+ /*O Hook useMemo torna mais fácil controlar quando filhos específicos atualizam,
+  reduzindo a necessidade de pure components.
+Finalmente, o Hook useReducer reduz a necessidade de passar callbacks profundamente,
+ como explicado abaixo.
+Como evitar passar callbacks para baixo?
+Nós descobrimos que a maioria das pessoas não gostam de passar callbacks manualmente
+ através de cada nível de uma árvore de componente. Mesmo sendo mais explícito, pode
+  parecer como um monte de “encanamento”.
+
+Em árvores grandes de componentes, uma alternativa que recomendamos é passar para
+ baixo a função dispatch do useReducer via context: */
+
+ const TodosDispatch = React.createContext(null);
+
+ function TodosApp() {
+    //Nota: `dispatch` não vai mudar entre re-renderizações
+    const [todos, dispatch] = useReducer(todosReducer);
+
+    return (
+        <TodosDispatch.Provider value={dispatch}>
+            <DeepTree todos={todos} />
+        </TodosDispatch.Provider>
+    );
+ }
+
+ /*Qualquer filho na árvore dentro de TodosApp pode usar a função dispatch para
+  disparar ações para o TodosApp: */
+
+  function DeepChild(props) {
+    // Se queremos executar uma ação, podemos pegar
+    //dispatch do context.
+    const dispatch = useCOntext(TodosDispatch);
+
+    function handleClick() {
+        dispatch ({ type: 'add', text: 'hello' });
+    }
+
+    return (
+        <button onClick={handleCLick}>Add todo</button>
+    );
+  }
+
+  /*Isso é mais mais conveniente do ponto de vista de manutenção (não há a necessidade
+     de passar callbacks) e evita o problema de passar callbacks como um todo. Passando
+      dispatch desta maneira é o padrão recomendado para atualizações profundas.
+
+Note que você ainda pode escolher entre passar o estado da aplicação para baixo como
+ props (mais explícito) ou como context (mais conveniente para atualizações bem
+     profundas). Se você também usar context para o estado, use dois tipos de context
+      diferentes — o dispatch nunca muda, então componentes que leem ele não precisam
+       re-renderizar a menos que precisem também do estado da aplicação.
+
+Como ler um valor frequentemente variável de useCallback?
+Nota
+
+Recomendamos passar dispatch para baixo com context ao invés de callbacks individuais
+ em props. A abordagem abaixo só é mencionada aqui para a integralidade e como válvula
+  de escape.
+
+Em alguns casos raros você pode precirar memorizar uma callback com useCallback mas
+ a memorização não funciona muito bem porque a função interna tem que ser recriada
+  muitas vezes. Se a função que você está memorizando é um manipulador de eventos e
+   não é usado durante a renderização, você pode usar ref como uma variável de
+   instância e salvar o último valor nela manualmente: */
+
+   function Form() {
+    const [text, updateText] = useState(``);
+    const textRef = useRef();
+
+    useEffect(() => {
+        textRef.current = text; //Guarda o valor na ref
+    });
+
+    const handleSubmit = useCallback(() => {
+        const currentText = textRef.current; //Le o valor da ref
+        alert(currentText);
+    }, [textRef]); //Não recria handleSubmit como [text] faria
+
+    return (
+        <>
+        <unput value={text} onChange={e =>
+    updateText(e.target.value)} />
+    <ExpensiveTree onSubmit={handleSubmit} />
+    </>
+    );
+   }
+
+   /*Este é um padrão um tanto confuso mas mostra que você pode usar essa válvula de
+    escape se precisar. É mais suportável se você extrair para um Hook customizado: */
+
+    function Form() {
+        const [text, updateText] = useState('');
+        //Será memorizado mesmo se `text` mudar:
+        const handleSubmit = useEventCallback(() => {
+            alert(text);
+        }, [text]);
+
+        return (
+            <>
+            <input value={text} onChange={e =>
+        updateText(e.target.value)} />
+        <ExpensiveTree onSubmit={handleSubmit} />
+        </>
+        );
+    }
+
+    function useEventCallback(fn, dependencies) {
+        const ref = useRef(() => {
+            throw new Error('Cannot call an event handler while rendering.');
+        });
+
+        useEffect(() => {
+            ref.current = fn;
+        }, [fn, ...dependencies]);
+
+        return useCallback(() => {
+            const fn = ref.current;
+            return fn();
+        }, [ref]);
+    }
+
+    /*Em ambos os casos, não recomendamos esse padrão e só estamos mostrando aqui para
+     integralidade. É melhor evitar passar callbacks para baixo.
+
+Por detrás das cortinas
+Como o React associa chamadas de Hooks com componentes?
+React acompanha o componente que está renderizando. Graças as Regras dos Hooks,
+ sabemos que Hooks são chamados somente dentro de componentes React (ou Hooks
+     customizados — que também só são chamados dentro de componentes React).
+
+Existe uma lista interna de “células de memória” associadas a cada componente. Elas são
+ somente objetos JavaScript aonde podemos colocar alguns dados. Quando você chama um
+  Hook como useState(), é lido a célula atual (ou inicializada durante a primeira
+     renderização), e então move o ponteiro para a próxima. É assim que múltiplas
+      chamadas de useState() recebem seu estado local independente.
+
+Quais são as referências que influênciaram a criação dos Hooks?
+Hooks sintetizam ideias de diferentes fontes:
+
+Nossos velhos experimentos com APIs funcionais no repositório react-future.
+Experimentos da comunidade React com APIs de prop de renderização, incluindo Reactions
+ Component feito por Ryan Florence.
+A proposta da palavra chave adopt como um auxiliar para render props, feito por 
+Dominic Gannaway.
+Variáveis de estado e células de estado em DisplayScript.
+Reducer components em ReasonReact.
+Subscriptions em Rx.
+Efeitos algébricos em Multicore OCaml. */
+
